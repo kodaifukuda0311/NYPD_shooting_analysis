@@ -1,0 +1,88 @@
+---
+title: "Analysis of NYDP Shooting Incident Data"
+author: "Kodai.Fukuda"
+date: "2023-07-24"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Analyzing NYDP Shooting Incident Data
+
+This report is about the data of gun shooting incidents in NYC, from 2006 to 2022. A csv file can be downloaded from <https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD>.
+
+```{r load-packages, include = FALSE}
+library(tidyverse)
+```
+
+```{r NYPD.data}
+url_nypd <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+NYPD.data <- read.csv(url_nypd)
+```
+
+```{r Summary}
+summary(NYPD.data)
+```
+
+```{r Cleaning and Select Data}
+NYPD.datacleaning <- subset(NYPD.data, select = setdiff(colnames(NYPD.data), c('Latitude', 'Longitude', 'Lon_Lat','LOC_OF_OCCUR_DESC','JURISDICTION_CODE','LOC_CLASSFCTN_DESC','LOCATION_DESC','X_COORD_CD','Y_COORD_CD')))
+
+library(lubridate)
+NYPD.datacleaning$OCCUR_DATE <- mdy(NYPD.datacleaning$OCCUR_DATE)
+NYPD.datacleaning$OCCUR_TIME <- hms(NYPD.datacleaning$OCCUR_TIME)
+head(NYPD.datacleaning)
+```
+
+## Which month has the highest number of gun shootings?
+
+```{r Analysis 1}
+occur_month <- month(NYPD.datacleaning$OCCUR_DATE)
+occur_month.df <- data.frame(table(occur_month))
+barplot(occur_month.df[,2],
+        names.arg=c("1","2","3","4","5","6","7","8","9","10","11","12"),
+     main = "Which month has the highest number of gun shootings?",
+     xlab = "Month",
+     ylab = "Frequency")
+```
+
+Comparing the data from 2006 to 2022 by month, it is clear that the number of gun shooting incident which occurred in NYC increases over the summer. The number reached its peak in July.
+
+```{r Analysis 2}
+five_years <- NYPD.datacleaning %>%
+  filter(between(
+    OCCUR_DATE,
+    ymd("2020-01-01"),
+    ymd("2022-12-12")))
+
+five_years.df <- data.frame(table(month(five_years$OCCUR_DATE)))
+
+barplot(five_years.df[,2],
+        names.arg=c("1","2","3","4","5","6","7","8","9","10","11","12"),
+     main = "How about the trends between 2020 and 2022?",
+     xlab = "Month",
+     ylab = "Frequency")
+```
+
+The trends have not changed in the last 3 years.
+
+## Trends in the number of gun shootings
+
+```{r Analysis 3}
+occur_year <- year(NYPD.datacleaning$OCCUR_DATE)
+occur_year.df = data.frame(table(occur_year))
+
+plot(2006:2022, occur_year.df[,2], type="o",
+     main = "Annual Data of shooting incidents",
+     xlab = "Year",
+     ylab = "Frequency")
+```
+
+Yearly data shows that the number of gun shootings had been gradually declining since 2006, but then spiked in 2020, returning to pre-2010 levels. This leads to the question of why the number suddenly jumped in 2020.
+
+## Conclusion and Possible Bias
+
+First, the number of gun shootings has been increasing again in the last couple of years, so New York City needs to increase its budget and increase the number of police.
+
+Second, however, it is not a dangerous city all year round. According to the data, gun shootings tend to occur in summer. It may be necessary to increase the number of police patrolling the streets from June through September.
+
+A possible bias in this analysis was that the trend had changed over a period of about 15 years. The first analysis, which analyzed totals from 2006 to more recent years, found that gun shootings were more likely to occur in the summer. However, there was concern that the social context had changed over the past 15 years and that the results might change depending on the time period analyzed. Therefore, I focused on data from the last three years to see if the trend had changed. The results showed that the trend had not changed in the two periods, indicating that the analysis was valid.
